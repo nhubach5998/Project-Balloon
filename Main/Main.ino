@@ -13,6 +13,7 @@ char* message[] = {Time," ",Location," ",Other," ",Temp," ",Gyr,"\n"};
 void setup(){
     Serial.begin(9600);
     Serial2.begin(9600);
+    //Hello world
 }
 
 void loop(){
