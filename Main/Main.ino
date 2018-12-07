@@ -1,6 +1,7 @@
 #include <TinyGPS.h>
 TinyGPS gps; // create GPS instance
-
+unsigned long SMS_Timer;
+float Alt_Track[] = {0.0,0.0}
 unsigned long sec;
 byte month, day, hour, minutes, second, hundredths;
 char Time[11];
@@ -12,8 +13,10 @@ char* message[] = {Time," ",Location," ",Other," ",Temp," ",Gyr,"\n"};
                 //   time          Latitude         Longtitude       altitude      temp         x        y        z as degree from origin
 void setup(){
     Serial.begin(9600);
+    Serial1.begin(115200);
     Serial2.begin(9600);
     //Hello world
+    SMS_Timer = millis()/1000;
 }
 
 void loop(){
@@ -26,7 +29,10 @@ void loop(){
     }
     //send gps location every 10min if altitude < 1km
     //or altitude has not changes much since the last 2 minutes
-
+    //and SMS service is available (check by AT command for NETWORK)
+    if ((millis()/1000)-SMS_Timer >  36000 && millis() - Alt_Track[1] > 120000 || Alt_Track[0] < 1000.0 ){
+//--->/ send SMS
+    }
     //read temp and humidity
     
     //combine data and write to SD card
@@ -80,7 +86,10 @@ void ProcessInfo(float Lat, float Long){
   float mps = gps.f_speed_mps();
   // heading to (degree) at speed of (mps) at height of (altitude)
   sprintf(Other,"%.2f %.2f %.2f",Course,mps,alt);
-  
+  if(abs(alt-Alt_Track[0])>100){
+    Alt_Track[1]= millis();
+    Alt_Track[0]= alt;
+  }
 }
 void GPSSMS(String &text){
   for(int i = 0;i<sizeof(Location);i++){
