@@ -12,9 +12,9 @@ char Other[25];
 char* message[] = {Time," ",Location," ",Other," ",Temp," ",Gyr,"\n"};
                 //   time          Latitude         Longtitude       altitude      temp         x        y        z as degree from origin
 void setup(){
-    Serial.begin(9600);
-    Serial1.begin(115200);
-    Serial2.begin(9600);
+    Serial.begin(9600);     // debugging Terminal
+    Serial1.begin(115200);  //Communication with GPS
+    Serial2.begin(9600);    //Read GPS
     //Hello world
     SMS_Timer = millis()/1000;
 }
@@ -27,15 +27,17 @@ void loop(){
     for(int i = 0;i<10; i++){
       Serial.print(message[i]);
     }
+    
+    //read temp and humidity
+//--->do sth   
+    //combine data and write to SD card
+//--->do sth    
     //send gps location every 10min if altitude < 1km
     //or altitude has not changes much since the last 2 minutes
     //and SMS service is available (check by AT command for NETWORK)
     if ((millis()/1000)-SMS_Timer >  36000 && millis() - Alt_Track[1] > 120000 || Alt_Track[0] < 1000.0 ){
 //--->/ send SMS
     }
-    //read temp and humidity
-    
-    //combine data and write to SD card
     delay(1000);
 }
 void ReadGPS(){
