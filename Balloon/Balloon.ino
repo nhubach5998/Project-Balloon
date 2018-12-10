@@ -16,6 +16,7 @@ bool Flag_1 = false, //Altitude check
 TinyGPSPlus GPS;
 File Data_File;
 int count;
+bool Airplane = false;
 
 //functions
 static void GetGPSData(unsigned long ms);
@@ -74,6 +75,7 @@ void loop(){
     if(millis()/1000 - SMS_Timer > 600 && Flag_1 && Flag_2)
         SendLocation();
 
+    checkSMSValid();
     //DEBUG message + command
     Process_Command();
 
@@ -232,16 +234,39 @@ bool ReadGSM(String str){
         return false;
     }
 }
+void Airplane_Mode(bool c){
+    if(!Airplane && c){
+        Serial1.println("AT+CREG=0");
+        Serial1.println("AT+CFUN=0");
+        Clear_Buffer();
+        Airplane = true;
+    }else{
+        if(!c && Airplane){
+            Serial1.println("AT+CREG=1");
+            Serial1.println("AT+CFUN=1");
+            Clear_Buffer();
+            Airplane = false;
+        }
+
+    }
+}
 void checkSMSValid(){
     //Serial.println("Check for GSM ok...");
     //GetGPSData(250);
-    if(Altitude<1000 && Flag_1 == false){
-        Flag_1 = true;
-        Serial.println("Altitude ok for SMS...");
+    if(Altitude<1000){
+        if(!Flag_1){
+            Airplane_Mode(false);
+            Flag_1 = true;
+            Serial.println("Altitude ok for SMS...");
+        }
     }else{
-      if(Flag_1 == false)
-        Serial.println("Altitude not OK for SMS or Altitude not available...");
+        if(Flag_1){
+            Airplane_Mode(true);
+            Flag_1 = false;
+            Serial.println("Altitude NOT ok for SMS..."); 
+        }
     }
+
     Clear_Buffer();
     if(!Flag_2 && Flag_1){
       Serial1.println("AT+CREG?");
