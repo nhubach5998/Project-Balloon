@@ -18,7 +18,7 @@ File Data_File;
 int count;
 
 //functions
-void ReadGPS();
+static void GetGPSData(unsigned long ms);
 void WriteToSD();
 void checkSMSValid();
 void SendLocation(); // send time + location + altitude
@@ -55,7 +55,7 @@ void setup(){
 void loop(){
 
     //Read GPS for 400ms + process data
-    ReadGPS(250);
+    GetGPSData(250);
     //write to SD card 50 lines and save
     WriteToSD();
 
@@ -71,13 +71,14 @@ void loop(){
 
 }
 void Process_Command(){
+  String str="";
     if(Serial.available()>0){
         int i = 0;
         while(Serial.available()){
-            a = Serial.read();
+           int a = Serial.read();
             if(a == 10){
                 Serial1.println(str);
-                str = "";
+                Serial.println(str);
             }else{
                 if (a == 33){
                     SendLocation();
@@ -87,8 +88,13 @@ void Process_Command(){
             }
         }
     }
-    ReadGPS(250);
-    if(Serial1.available)
+    GetGPSData(250);
+    if(Serial1.available()){
+      while(Serial1.available()){
+        Serial.write(Serial1.read());
+      }
+      Serial.print("\n");
+    }
 }
 void SendLocation(){
     Serial1.println("AT+CMGF=1");
@@ -135,13 +141,13 @@ void WriteToSD(){
         count++;
     }
 }
-void readGPS(int ms){
-    long start = millis();
+static void GetGPSData(unsigned long ms){
+    unsigned long start = millis();
     do{
         while(Serial2.available()){
             GPS.encode(Serial2.read());
         }
-        sprintf(Time,"%2d:%2d:%2d.%2d ",gps.time.hour(),gps.time.minute(),gps.time.second(),gps.time.centisecond());
+        sprintf(Time,"%2d:%2d:%2d.%2d ",GPS.time.hour(),GPS.time.minute(),GPS.time.second(),GPS.time.centisecond());
         if(GPS.location.isUpdated()){
             Location[0]=GPS.location.lat();
             Location[1]=GPS.location.lng();
@@ -167,7 +173,7 @@ void EnableGPS(){
     delay(100);
     Serial.print("AT+GPSUPGRADE=1");
     delay(100);
-    while(GPS.charsProcessed()<10)  ReadGPS(200);
+    while(GPS.charsProcessed()<10)  GetGPSData(200);
     Serial2.print("$PMTK220,1000*1F"); //frequency data feed is 1 sec
     Serial2.print("$PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28"); // only get RMC and GGA
     Serial2.print("$PGCMD,33,0*6D"); // no attena status
@@ -199,7 +205,7 @@ bool ReadGSM(String str){
     }
 }
 void checkSMSValid(){
-    readGPS(700);
+    GetGPSData(700);
     if(GPS.altitude.meters()<1000){
         Flag_1 = true;
     }
@@ -209,4 +215,3 @@ void checkSMSValid(){
         Flag_2=true;
     }
 }
-
