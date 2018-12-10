@@ -267,8 +267,8 @@ void checkSMSValid(){
         }
     }
 
-    Clear_Buffer();
     if(!Flag_2 && Flag_1){
+      //Clear_Buffer();
       Serial1.println("AT+CREG?");
       if(ReadGSM("+CREG: 1,1OK")){
           Flag_2=true;
