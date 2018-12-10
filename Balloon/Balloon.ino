@@ -25,6 +25,7 @@ void SendLocation(); // send time + location + altitude
 void Airplane_Mode(bool on);
 void Process_Command();
 void EnableGPS();
+void Clear_Buffer();
 
 //setup Arduino
 void setup(){
@@ -57,6 +58,7 @@ void loop(){
     //Read GPS for 400ms + process data
     GetGPSData(250);
     //write to SD card 50 lines and save
+    Serial.println("Write to SD...");
     WriteToSD();
 
     //2 flags:
@@ -97,6 +99,7 @@ void Process_Command(){
     }
 }
 void SendLocation(){
+    Serial.println("Sending location...");
     Serial1.println("AT+CMGF=1");
     delay(500); 
 
@@ -158,22 +161,29 @@ static void GetGPSData(unsigned long ms){
     }while(millis()-start < ms);
 }
 void EnableGPS(){
+    Serial.println("Enabling GPS...");
     String str="";
     bool stop = false;
     do{
-        Serial1.print("ATE0");
-        Serial1.flush();
-        Serial1.print("AT");
+        Serial.println("Turn off echo...");
+        Serial1.println("ATE0");
         delay(100);
+        Clear_Buffer();
+        Serial1.println("AT");
+        delay(100);
+        Serial.println("Test AT OK...");
         if(ReadGSM("OK")){
             stop=true;
         }
     }while(!stop);
+    Serial.println("Turn on GPS...");
     Serial1.print("AT+GPS=1");
     delay(100);
+    Serial.println("Push GPS to UART2...");
     Serial.print("AT+GPSUPGRADE=1");
     delay(100);
     while(GPS.charsProcessed()<10)  GetGPSData(200);
+    Serial.println("GPS configure settings...");
     Serial2.print("$PMTK220,1000*1F"); //frequency data feed is 1 sec
     Serial2.print("$PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28"); // only get RMC and GGA
     Serial2.print("$PGCMD,33,0*6D"); // no attena status
@@ -181,9 +191,11 @@ void EnableGPS(){
 bool ReadGSM(String str){
     String tmp="";
     bool flag = false;
+    Serial.println("Checking response...");
     if(Serial1.available()){
         while(Serial1.available()){
             int a = Serial1.read();
+            Serial.write(a);
             if(a == 13){
                 flag = false;
             }else{
@@ -197,7 +209,8 @@ bool ReadGSM(String str){
             }
         }
     }
-    Serial.print(tmp);
+    Serial.println();
+    Serial.print("String collected from GSM: "); Serial.println(tmp);
     if(tmp == str){
         return true;
     }else{
@@ -205,13 +218,27 @@ bool ReadGSM(String str){
     }
 }
 void checkSMSValid(){
+    Serial.println("Check for GSM ok...");
     GetGPSData(700);
     if(GPS.altitude.meters()<1000){
         Flag_1 = true;
+        Serial.println("Altitude ok for SMS...");
+    }else{
+      Serial.println("Altitude not OK for SMS or Altitude not available...");
     }
-    Serial1.flush();
+    Clear_Buffer();
     Serial1.print("AT+CREG?");
     if(ReadGSM("+CREG: 1,1")){
         Flag_2=true;
+        Serial.println("Network registered...");
+    }else{
+      Serial.println("no network connected... looking for one...");
+    }
+}
+void Clear_Buffer(){
+    if(Serial1.available()){
+        while(Serial1.available()){
+            Serial1.read();
+        }
     }
 }
