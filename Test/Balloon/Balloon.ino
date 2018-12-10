@@ -37,13 +37,13 @@ void setup(){
     Serial2.begin(9600);    //Read GPS
     
     //Open SD card to file called "GPSDATA.txt"
-    if (!SD.begin(SD_CS)) {
-    Serial.println("Failed to open sd card... Please try again!");
-    delay(100);
-    while(1);
-    }else{
-        Serial.println("Initialized SD card...");
-    }
+//    if (!SD.begin(SD_CS)) {
+//    Serial.println("Failed to open sd card... Please try again!");
+//    delay(100);
+//    while(1);
+//    }else{
+//        Serial.println("Initialized SD card...");
+//    }
 
     EnableGPS();        //Enable GPS
     checkSMSValid();    //check SMS function
@@ -65,7 +65,7 @@ void loop(){
 //    Serial.print(Location[1],6);
 //    Serial.println("");
     
-    WriteToSD();
+    //WriteToSD();
 
     //2 flags:
     //flag_1 : altitude valid for transmisting -> airplane mode off
@@ -233,24 +233,21 @@ bool ReadGSM(String str){
     }
 }
 void checkSMSValid(){
-    //Serial.println("Check for GSM ok...");
-    //GetGPSData(250);
-    if(Altitude<1000 && Flag_1 == false){
+    Serial.println("Check for GSM ok...");
+    GetGPSData(700);
+    if(GPS.altitude.meters()<1000){
         Flag_1 = true;
         Serial.println("Altitude ok for SMS...");
     }else{
-      if(Flag_1 == false)
-        Serial.println("Altitude not OK for SMS or Altitude not available...");
+      Serial.println("Altitude not OK for SMS or Altitude not available...");
     }
     Clear_Buffer();
-    if(!Flag_2 && Flag_1){
-      Serial1.println("AT+CREG?");
-      if(ReadGSM("+CREG: 1,1OK")){
-          Flag_2=true;
-          Serial.println("Network registered...");
-      }else{
-        Serial.println("no network connected... looking for one...");
-      }
+    Serial1.println("AT+CREG?");
+    if(ReadGSM("+CREG: 1,1")){
+        Flag_2=true;
+        Serial.println("Network registered...");
+    }else{
+      Serial.println("no network connected... looking for one...");
     }
 }
 void Clear_Buffer(){
