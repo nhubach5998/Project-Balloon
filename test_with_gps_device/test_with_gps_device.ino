@@ -1,7 +1,6 @@
 #include <LiquidCrystal.h>
 
 #include <SoftwareSerial.h>
-
 #include <TinyGPS.h>
 #include <SPI.h>
 #include <SD.h>
@@ -9,10 +8,9 @@
    It requires the use of SoftwareSerial, and assumes that you have a
    4800-baud serial GPS device hooked up on pins 4(rx) and 3(tx).
 */
-
 TinyGPS gps;
-SoftwareSerial ss(10, 13);
 
+SoftwareSerial ss(63,62);
 static void smartdelay(unsigned long ms);
 static void print_float(float val, float invalid, int len, int prec);
 static void print_int(unsigned long val, unsigned long invalid, int len);
@@ -31,19 +29,19 @@ void setup()
   Serial.println("          (deg)     (deg)      Age                      Age  (m)    --- from GPS ----  ---- to London  ----  RX    RX        Fail");
   Serial.println("-------------------------------------------------------------------------------------------------------------------------------------");
 
-  ss.begin(9600); lcd.begin(16, 2);
+  ss.begin(9600);// lcd.begin(16, 2);
   // Print a message to the LCD.
-  lcd.print("hello, world!");
-    Serial.print("Initializing SD card...");
+//  lcd.print("hello, world!");
+//    Serial.print("Initializing SD card...");
 
   if (!SD.begin(53)) {
-    lcd.setCursor(0,1);
-    lcd.print("failed to open sd card");
-    while (1);
+//    lcd.setCursor(0,1);
+//    lcd.print("failed to open sd card");
+//    while (1);
   }
-  lcd.setCursor(0,1);
-   lcd.print("Opened sd card");
-  lcd.clear();
+//  lcd.setCursor(0,1);
+//   lcd.print("Opened sd card");
+//  lcd.clear();
 }
 
 void loop()
@@ -55,41 +53,41 @@ void loop()
   gps.f_get_position(&flat, &flon, &age);
 
 //  if(age1<age
-//  print_int(gps.satellites(), TinyGPS::GPS_INVALID_SATELLITES, 5);
-//  print_int(gps.hdop(), TinyGPS::GPS_INVALID_HDOP, 5);
-//  print_float(flat, TinyGPS::GPS_INVALID_F_ANGLE, 10, 6);
-//  print_float(flon, TinyGPS::GPS_INVALID_F_ANGLE, 11, 6);
-//  print_int(age, TinyGPS::GPS_INVALID_AGE, 5);
-//  print_date(gps);
-//  print_float(gps.f_altitude(), TinyGPS::GPS_INVALID_F_ALTITUDE, 7, 2);
-//  print_float(gps.f_course(), TinyGPS::GPS_INVALID_F_ANGLE, 7, 2);
-//  print_float(gps.f_speed_kmph(), TinyGPS::GPS_INVALID_F_SPEED, 6, 2);
-//  print_str(gps.f_course() == TinyGPS::GPS_INVALID_F_ANGLE ? "*** " : TinyGPS::cardinal(gps.f_course()), 6);
-//  print_int(flat == TinyGPS::GPS_INVALID_F_ANGLE ? 0xFFFFFFFF : (unsigned long)TinyGPS::distance_between(flat, flon, LONDON_LAT, LONDON_LON) / 1000, 0xFFFFFFFF, 9);
-//  print_float(flat == TinyGPS::GPS_INVALID_F_ANGLE ? TinyGPS::GPS_INVALID_F_ANGLE : TinyGPS::course_to(flat, flon, LONDON_LAT, LONDON_LON), TinyGPS::GPS_INVALID_F_ANGLE, 7, 2);
-//  print_str(flat == TinyGPS::GPS_INVALID_F_ANGLE ? "*** " : TinyGPS::cardinal(TinyGPS::course_to(flat, flon, LONDON_LAT, LONDON_LON)), 6);
+  print_int(gps.satellites(), TinyGPS::GPS_INVALID_SATELLITES, 5);
+  print_int(gps.hdop(), TinyGPS::GPS_INVALID_HDOP, 5);
+  print_float(flat, TinyGPS::GPS_INVALID_F_ANGLE, 10, 6);
+  print_float(flon, TinyGPS::GPS_INVALID_F_ANGLE, 11, 6);
+  print_int(age, TinyGPS::GPS_INVALID_AGE, 5);
+  print_date(gps);
+  print_float(gps.f_altitude(), TinyGPS::GPS_INVALID_F_ALTITUDE, 7, 2);
+  print_float(gps.f_course(), TinyGPS::GPS_INVALID_F_ANGLE, 7, 2);
+  print_float(gps.f_speed_kmph(), TinyGPS::GPS_INVALID_F_SPEED, 6, 2);
+  print_str(gps.f_course() == TinyGPS::GPS_INVALID_F_ANGLE ? "*** " : TinyGPS::cardinal(gps.f_course()), 6);
+  print_int(flat == TinyGPS::GPS_INVALID_F_ANGLE ? 0xFFFFFFFF : (unsigned long)TinyGPS::distance_between(flat, flon, LONDON_LAT, LONDON_LON) / 1000, 0xFFFFFFFF, 9);
+  print_float(flat == TinyGPS::GPS_INVALID_F_ANGLE ? TinyGPS::GPS_INVALID_F_ANGLE : TinyGPS::course_to(flat, flon, LONDON_LAT, LONDON_LON), TinyGPS::GPS_INVALID_F_ANGLE, 7, 2);
+  print_str(flat == TinyGPS::GPS_INVALID_F_ANGLE ? "*** " : TinyGPS::cardinal(TinyGPS::course_to(flat, flon, LONDON_LAT, LONDON_LON)), 6);
+  Serial.println();
+//  lcd.setCursor(4,0);
+//  lcd.print("LAT"); lcd.print(flat,6);
+//  lcd.setCursor(0,1);
+//  lcd.print("LON: "); lcd.print(flon,6);
 
-  lcd.setCursor(4,0);
-  lcd.print("LAT"); lcd.print(flat,6);
-  lcd.setCursor(0,1);
-  lcd.print("LON: "); lcd.print(flon,6);
-
-  myFile = SD.open("test.txt", FILE_WRITE);
+ // myFile = SD.open("test.txt", FILE_WRITE);
 
   // if the file opened okay, write to it:
-  if (myFile) {
-    lcd.setCursor(0,0);
-    lcd.print(i); 
-    i++;
-    gettime(gps);
-    myFile.print(flat,6); myFile.print("\t");
-    myFile.print(flon,6); myFile.println();
-    // close the file:
-    myFile.close();
-  } else {
-    lcd.setCursor(0,0);
-    lcd.print("fail to open file");
-  }
+//  if (myFile) {
+//    lcd.setCursor(0,0);
+//    lcd.print(i); 
+//    i++;
+//    gettime(gps);
+//    myFile.print(flat,6); myFile.print("\t");
+//    myFile.print(flon,6); myFile.println();
+//    // close the file:
+//    myFile.close();
+//  } else {
+//    lcd.setCursor(0,0);
+//    lcd.print("fail to open file");
+//  }
   
   smartdelay(1000);
   gps.stats(&chars, &sentences, &failed);
@@ -111,7 +109,7 @@ static void smartdelay(unsigned long ms)
   unsigned long start = millis();
   do 
   {
-    while (ss.available())
+    while(ss.available())
       gps.encode(ss.read());
   } while (millis() - start < ms);
 }
