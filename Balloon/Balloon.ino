@@ -58,7 +58,7 @@ void loop(){
 
     //Read GPS for 400ms + process data
     GetGPSData(250);
-    // write to sd card
+     //write to sd card
 //    Serial.print("Lat: ");
 //    Serial.print(Location[0],6);
 //    Serial.println("");
@@ -75,7 +75,7 @@ void loop(){
     if(millis()/1000 - SMS_Timer > 600 && Flag_1 && Flag_2)
         SendLocation();
 
-    checkSMSValid();
+    //checkSMSValid();
     //DEBUG message + command
     Process_Command();
 
@@ -285,7 +285,6 @@ void Clear_Buffer(){
             Serial.write(Serial1.read());
         }
     }else{
-      Serial.println("No Response");
     }
     Serial.println();
 }
