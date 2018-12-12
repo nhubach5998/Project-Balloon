@@ -1,9 +1,13 @@
 //Libraries
 #include <TinyGPS++.h>
 #include <SD.h>
+#include <Keypad.h>
+#include <LiquidCrystal.h>
 
 //constant
 const int SD_CS = 53;
+const byte ROWS = 4; //four rows
+const byte COLS = 4; //four columns
 //variables
 char Time[12];
 float Location[2], Altitude, Speed_mps;
@@ -13,10 +17,25 @@ char Gyroscope[20];
 unsigned long SMS_Timer;
 bool Flag_1 = false, //Altitude check
      Flag_2 = false; //SMS function check
-TinyGPSPlus GPS;
-File Data_File;
 int count;
 bool Airplane = false;
+
+char keys[ROWS][COLS] = {
+  {'1','2','3','A'},
+  {'4','5','6','B'},
+  {'7','8','9','C'},
+  {'*','0','#','D'}
+};
+
+byte rowPins[ROWS] = {9, 8, 7, 6}; //connect to the row pinouts of the keypad
+byte colPins[COLS] = {5, 4, 3, 2}; //connect to the column pinouts of the keypad
+
+
+TinyGPSPlus GPS;
+File Data_File;
+LiquidCrystal lcd(27, 26, 25, 24, 23, 22);
+Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
+
 
 //functions
 static void GetGPSData(unsigned long ms);
@@ -27,28 +46,32 @@ void Airplane_Mode(bool on);
 void Process_Command();
 void EnableGPS();
 void Clear_Buffer();
+void Process_Command_LCD();
+void LCD_printat(String msg,int x, int y);
 
 //setup Arduino
 void setup(){
     //turn DEBUG serial port
     //turn GPS port (Serial2)
     //turn GSM port for SMS (Serial1)
-    Serial.begin(9600);     // debugging Terminal
+    //Serial.begin(9600);     // debugging Terminal
     Serial1.begin(115200);  //Communication with GPS
     Serial2.begin(9600);    //Read GPS
-    
+    lcd.begin(16,2);
     //Open SD card to file called "GPSDATA.txt"
     if (!SD.begin(SD_CS)) {
-    Serial.println("Failed to open sd card... Please try again!");
+    //Serial.println("Failed to open sd card... Please try again!");
+    lcd.print("SD CARD FAILED!");
     delay(100);
     while(1);
     }else{
-        Serial.println("Initialized SD card...");
+        //Serial.println("Initialized SD card...");
+        lcd.print("SD CARD SUCCESS!");
     }
 
     EnableGPS();        //Enable GPS
     checkSMSValid();    //check SMS function
-    Serial.println("System ready to go");
+    //Serial.println("System ready to go");
     SMS_Timer = millis()/1000;
     count = 0;
 }
@@ -67,7 +90,7 @@ void loop(){
 //    Serial.println("");
     
     WriteToSD();
-    Serial.println(millis()/1000-SMS_Timer);
+    //Serial.println(millis()/1000-SMS_Timer);
     //2 flags:
     //flag_1 : altitude valid for transmisting -> airplane mode off
     //flag_2 : CREG = 5 or = 1
@@ -79,8 +102,64 @@ void loop(){
     }
     
     //DEBUG message + command
-    Process_Command();
+    //Process_Command();
+    Process_Command_LCD();
 
+}
+void Process_Command_LCD(){
+    char key = keypad.getKey();
+    switch(key){
+        case '1':
+        SendLocation();
+        break;
+        case '2':
+        Airplane_Mode(true);
+        break;
+        case '3':
+        Airplane_Mode(false);
+        break;
+        case '4':
+        //check network
+        LCD_printat("Check GSM: ",0,1);
+        Serial1.println("AT+CREG?");
+        if(ReadGSM("+CREG: 1,1OK")){
+            LCD_printat("OK!",11,1);
+        }else{
+            LCD_printat("N/A",11,1);
+        }
+        break;
+        case 'C':
+        lcd.clear();
+        break;
+        case '*':
+        //scroll r
+        break;
+        case '#':
+        break;
+        default:
+        break;
+    }
+
+    LCD_printat(Flag_1==1?"1":"0",0,0);
+    LCD_printat(Flag_2==1?"1":"0",2,0);
+    lcd.setCursor(4,0);
+    for(int i=0;i<5;i++) lcd.print(Time[i]);
+    lcd.setCursor(13,0);
+    lcd.print(500-(millis()/1000-SMS_Timer));
+    GetGPSData(250);
+    if(Serial1.available()){
+        lcd.setCursor(0,1);
+        while(Serial1.available()){
+            int a = Serial1.read();
+            if(a == 13 || a == 10){
+                lcd.print(" ");
+            }else{
+                lcd.print((char)a);
+            }
+            //Serial.write(Serial1.read());
+        }
+      //Serial.print("\n");
+    }
 }
 void Process_Command(){
   String str="";
@@ -108,11 +187,14 @@ void Process_Command(){
       Serial.print("\n");
     }
 }
+void LCD_printat(String msg, int x,int y){
+    lcd.setCursor(x,y);
+    lcd.print(msg);
+}
 void SendLocation(){
-    Serial.println("Sending location...");
+    //Serial.println("Sending location...");
     Serial1.println("AT+CMGF=1");
-    delay(500); 
-
+    LCD_printat("SENDING LOCATION",0,1);
     Serial1.print("AT+CMGS=\"+16147475298\"\r");
     for(int i = 0;i<sizeof(Time);i++)
         Serial1.print(Time[i]);
@@ -121,10 +203,9 @@ void SendLocation(){
     Serial1.print(Location[1],6);
     Serial1.print(" ");
     Serial1.print(Altitude,2);
-    delay(200);
-
+    GetGPSData(100);
     Serial1.println((char)26);// ASCII code of CTRL+Z
-    delay(500);
+    GetGPSData(100);
     SMS_Timer = millis()/1000;
 }
 void WriteToSD(){
@@ -168,23 +249,27 @@ static void GetGPSData(unsigned long ms){
     }while(millis()-start < ms);
 }
 void EnableGPS(){
-    Serial.println("Enabling GPS...");
+    //Serial.println("Enabling GPS...");
+    LCD_printat("Enabling GPS...",0,0);
     String str="";
     bool stop = false;
     do{
-        Serial.println("Turn off echo...");
+        //Serial.println("Turn off echo...");
+        LCD_printat("Turn off echo...",0,0);
         Serial1.println("ATE0");
         delay(100);
         Clear_Buffer();
         Serial1.println("AT");
         delay(100);
-        Serial.println("Test AT OK...");
+        //Serial.println("Test AT OK...");
+        LCD_printat("AT OK               ",0,0);
         if(ReadGSM("OK")){
             stop=true;
         }
     }while(!stop);
     stop = false;
-    Serial.println("Turn on GPS...");
+    //Serial.println("Turn on GPS...");
+    LCD_printat("TURN ON GPS....",0,0);
     while(!stop){
       Serial1.println("AT+GPS=1");
       if(ReadGSM("OK")){
@@ -193,7 +278,8 @@ void EnableGPS(){
     }
     delay(100);
     stop = false;
-    Serial.println("Push GPS to UART2...");
+    //Serial.println("Push GPS to UART2...");
+    //LCD_printat("TURN ON GPS....",0,0);
     while(!stop){
       Serial1.println("AT+GPSUPGRADE=1");
       if(ReadGSM("OK")){
@@ -202,7 +288,7 @@ void EnableGPS(){
     }
     delay(100);
     while(GPS.charsProcessed()<10)  GetGPSData(200);
-    Serial.println("GPS configure settings...");
+    //Serial.println("GPS configure settings...");
     Serial2.print("$PMTK220,1000*1F"); //frequency data feed is 1 sec
     Serial2.print("$PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28"); // only get RMC and GGA
     Serial2.print("$PGCMD,33,0*6D"); // no attena status
@@ -210,7 +296,7 @@ void EnableGPS(){
 bool ReadGSM(String str){
     String tmp="";
     bool flag = false;
-    Serial.println("Checking response...");
+    //Serial.println("Checking response...");
     delay(1000);
     if(Serial1.available()){
         while(Serial1.available()){
@@ -228,8 +314,8 @@ bool ReadGSM(String str){
             }
         }
     }
-    Serial.println();
-    Serial.print("String collected from GSM: "); Serial.println(tmp);
+    //Serial.println();
+    //Serial.print("String collected from GSM: "); Serial.println(tmp);
     if(tmp == str){
         return true;
     }else{
@@ -254,18 +340,20 @@ void Airplane_Mode(bool c){
 }
 void checkSMSValid(){
     //Serial.println("Check for GSM ok...");
+    LCD_printat("CHECK VALIDITY..",0,0);
     //GetGPSData(250);
     if(Altitude<1000){
         if(!Flag_1){
             Airplane_Mode(false);
             Flag_1 = true;
-            Serial.println("Altitude ok for SMS...");
+            //Serial.println("Altitude ok for SMS...");
+            LCD_printat("Altitude OK",0,0);
         }
     }else{
         if(Flag_1){
             Airplane_Mode(true);
             Flag_1 = false;
-            Serial.println("Altitude NOT ok for SMS..."); 
+            //Serial.println("Altitude NOT ok for SMS...");
         }
     }
 
@@ -274,20 +362,24 @@ void checkSMSValid(){
       Serial1.println("AT+CREG?");
       if(ReadGSM("+CREG: 1,1OK")){
           Flag_2=true;
-          Serial.println("Network registered...");
+          //Serial.println("Network registered...");
+          LCD_printat("GSM Network OK!",0,1);
       }else{
         Flag_2 = false;
-        Serial.println("no network connected... looking for one...");
+        //Serial.println("no network connected... looking for one...");
+        LCD_printat("NO GSM Network!",0,1);
       }
     }
 }
 void Clear_Buffer(){
-    Serial.println();
+    //Serial.println();
+    lcd.setCursor(0,1);
     if(Serial1.available()){
         while(Serial1.available()){
-            Serial.write(Serial1.read());
+            //Serial.write(Serial1.read());
+            lcd.print((char)Serial1.read());
         }
     }else{
     }
-    Serial.println();
+    //Serial.println();
 }

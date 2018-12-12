@@ -45,7 +45,7 @@ void loop(){
 
 
     //read gps
-    ReadGPS(1000); // read GPS
+    ReadGPS(200); // read GPS
     //read temp and humidity
 //--->do sth   
 
@@ -84,24 +84,22 @@ void loop(){
     delay(200);
 }
 static void ReadGPS(long ms){
+  float FLat,FLong;
+  unsigned long age; // old data? or new data? but not use
   long p1= millis();
   do{
   if(Serial2.available()){
-    while(Serial2.available()){
-    //int a = Serial2.read();
-    gps.encode(Serial2.read()); // read every character received from GPS to GPS instance
+    //byte a = Serial2.read();
+    while(Serial2.available()) gps.encode(Serial2.read()); // read every character received from GPS to GPS instance
     //Serial.write(a);
-    }
   }else{
     IncreaseTime();
   }
   }while(millis()-p1<ms);
   sec = millis();
 //  gps.f_get_position(&FLat,&FLong,&age); // get GPS info from GPS instance to variable
-//  FLat = gps.location.lat();
-//  FLong = gps.location.lng();
-//  Serial.print(FLat,6);Serial.print("\t");Serial.print(FLong,6);Serial.println();
-  ProcessInfo(); // send data to char array
+  Serial.print(FLat);Serial.print(FLong);Serial.println();
+  ProcessInfo(FLat,FLong); // send data to char array
 }
 static void IncreaseTime(){
   unsigned long change = millis() - sec;
@@ -122,8 +120,9 @@ static void IncreaseTime(){
   sec = millis();
   sprintf(Time,"%02d:%02d:%02d.%02d",hour-5, minutes, second, hundredths);
 }
-static void ProcessInfo(){
-  sprintf(Location,"%.6f %.6f",gps.location.lat(),gps.location.lng());
+static void ProcessInfo(float Lat, float Long){
+  sprintf(Location,"%.6f %.6f",Lat,Long);
+  
   //code from library to get date and time
   int year;
   unsigned long fix_age;
@@ -131,11 +130,11 @@ static void ProcessInfo(){
 //  &hour, &minutes, &second, &hundredths, &fix_age);
   sprintf(Time,"%02d:%02d:%02d.%02d",gps.time.hour()-5, gps.time.minute(), gps.time.second(), gps.time.centisecond());
 
-  float alt = gps.altitude.meters();
-  double Course = gps.course.deg();
-  float mps1 = gps.speed.mps();
+  float alt = gps.
+  float Course = gps.f_course();
+  float mps = gps.f_speed_mps();
   // heading to (degree) at speed of (mps) at height of (altitude)
-  sprintf(Other,"%d %.2f %.2f",Course,mps1,alt);
+  sprintf(Other,"%.2f %.2f %.2f",Course,mps,alt);
   if(abs(alt-Alt_Track[0])>100){
     Alt_Track[1]= millis();
     Alt_Track[0]= alt;
