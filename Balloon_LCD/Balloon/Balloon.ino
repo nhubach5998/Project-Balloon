@@ -5,49 +5,50 @@
 #include <LiquidCrystal.h>
 
 //constant
-const int SD_CS = 53;
+const int SD_CS = 53; //SD card digital pin
 const byte ROWS = 4; //four rows
 const byte COLS = 4; //four columns
 //variables
-char Time[12];
-float Location[2], Altitude, Speed_mps;
-double Course;
-float Temperature;
-char Gyroscope[20];
-unsigned long SMS_Timer;
+char Time[12]; // Time hh:mm:ss.ms
+float Location[2], Altitude, Speed_mps; // [Lat,Long] , altitude, speed travelling
+double Course; // COurse travel
+float Temperature; //Temperature in Celcius
+char Gyroscope[20]; // Gyroscope as orientation
+unsigned long SMS_Timer;// Timer for sending text
 bool Flag_1 = false, //Altitude check
      Flag_2 = false; //SMS function check
 int count;
-bool Airplane = false;
+bool Airplane = false;// state of airplane mode false is not in airplane mode
 
+// map for keypad
 char keys[ROWS][COLS] = {
   {'1','2','3','A'},
   {'4','5','6','B'},
   {'7','8','9','C'},
   {'*','0','#','D'}
 };
-
+//For keypad setup
 byte rowPins[ROWS] = {9, 8, 7, 6}; //connect to the row pinouts of the keypad
 byte colPins[COLS] = {5, 4, 3, 2}; //connect to the column pinouts of the keypad
 
 
-TinyGPSPlus GPS;
-File Data_File;
-LiquidCrystal lcd(27, 26, 25, 24, 23, 22);
+TinyGPSPlus GPS;    // create GPS instance
+File Data_File;     // File instance
+LiquidCrystal lcd(27, 26, 25, 24, 23, 22); // set up  LCD RS:27, E:26, d4-7:25-22.
 Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS );
 
 
 //functions
-static void GetGPSData(unsigned long ms);
-void WriteToSD();
-void checkSMSValid();
+static void GetGPSData(unsigned long ms);   //Function read as much data and process them in ms (millisecond)
+void WriteToSD();   // write everything to SD card
+void checkSMSValid();   // checking if payload can send text message
 void SendLocation(); // send time + location + altitude
-void Airplane_Mode(bool on);
-void Process_Command();
-void EnableGPS();
-void Clear_Buffer();
-void Process_Command_LCD();
-void LCD_printat(String msg,int x, int y);
+void Airplane_Mode(bool on); // turn on off airplane
+void Process_Command(); // take in command and return response
+void EnableGPS(); // turn on GPS
+void Clear_Buffer(); // REad response from GSM module
+void Process_Command_LCD(); // Same as Process_Command but from LCD and keypad type
+void LCD_printat(String msg,int x, int y); // print message on LCD screen
 
 //setup Arduino
 void setup(){

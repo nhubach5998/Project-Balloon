@@ -65,9 +65,10 @@ void loop(){
 //    Serial.print("Long: ");
 //    Serial.print(Location[1],6);
 //    Serial.println("");
-    
+    for(int i=0;i<12;i++)
+    Serial.print(Time[i]);
     WriteToSD();
-    Serial.println(millis()/1000-SMS_Timer);
+    //Serial.println(millis()/1000-SMS_Timer);
     //2 flags:
     //flag_1 : altitude valid for transmisting -> airplane mode off
     //flag_2 : CREG = 5 or = 1
